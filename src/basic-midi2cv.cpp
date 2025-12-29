@@ -7,6 +7,7 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 {
 	midi_to_cv_.init(cv_channel, 1);
 	midi_channel_ = midi_channel;
+	cv_channel_ = cv_channel;
 	state_ = State::kDefault;
 
 	button_a_.init();
@@ -32,10 +33,12 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 	for (size_t i = 0; i < NO_OF_LEDS; i++) {
 		leds_[i] = Led(led_pins[i]);
 	}
+	reset_leds_ = false;
 
 	// Pots setup
 	pots_.set_simple(true);
-	pots_.set_output_resolution(4);
+	pots_.set_output_resolution(4); // Enough to have 0-15 for pot resolution
+
 }
 
 void BasicMidi2CV::button_a_on_press() {
@@ -45,7 +48,9 @@ void BasicMidi2CV::button_a_on_press() {
 }
 
 void BasicMidi2CV::button_a_on_release() {
-	midi_to_cv_.set_midi_channel(midi_channel_);
+	if (state_ == State::kSetMidiChannel) {
+		midi_to_cv_.set_midi_channel(midi_channel_);
+	}
 	state_ = State::kDefault;
 }
 
@@ -56,6 +61,9 @@ void BasicMidi2CV::button_b_on_press() {
 }
 
 void BasicMidi2CV::button_b_on_release() {
+	if (state_ == State::kSetCVChannel) {
+		midi_to_cv_.set_pitch_channel(cv_channel_);
+	}
 	state_ = State::kDefault;
 }
 
@@ -64,28 +72,63 @@ void BasicMidi2CV::update() {
 	button_a_.update();
 	button_b_.update();
 
-	switch (state_)
-	{
-	// Read pot X and set MIDI channel accordingly
-	case State::kSetMidiChannel:
-		pots_.get(0);
-		midi_channel_ = 1;
-		break;
+	switch (state_) {
+		// Read pot X and set MIDI channel accordingly
+		case State::kSetMidiChannel: {
+			uint8_t pot_a_value = pots_.get(POT_MIDI_CHANNEL);
+			pot_a_value = clamp(0, 15, pot_a_value);
 
-	// Read pot Y and set CV channel
-	case State::kSetCVChannel:
-		cv_channel_ = brain::io::AudioCvOutChannel::kChannelB;
-		break;
+			midi_channel_ = pot_a_value + 1;
 
-	default:
-		break;
+			set_leds_from_mask(pot_a_value);
+			reset_leds_ = true;
+			break;
+		}
+
+		// Read pot Y and set CV channel
+		case State::kSetCVChannel: {
+			uint8_t pot_b_value = pots_.get(POT_CV_CHANNEL);
+			uint8_t led_mask = 0b000000;
+
+			if (pot_b_value < POT_CV_CHANNEL_THRESHOLD) {
+				cv_channel_ = brain::io::AudioCvOutChannel::kChannelA;
+				led_mask = LED_MASK_CHANNEL_A;
+			} else {
+				cv_channel_ = brain::io::AudioCvOutChannel::kChannelB;
+				led_mask = LED_MASK_CHANNEL_B;
+			}
+
+			set_leds_from_mask(led_mask);
+			reset_leds_ = true;
+			break;
+		}
+
+		default: {
+			if (reset_leds_) {
+				for (size_t i = 0; i < NO_OF_LEDS; i++) {
+					leds_[i].off();
+				}
+			}
+			reset_leds_ = false;
+			break;
+		}
 	}
 }
 
-State BasicMidi2CV::get_state() {
+void BasicMidi2CV::set_leds_from_mask(uint8_t mask) {
+	for (size_t i = 0; i < NO_OF_LEDS; i++) {
+		if (mask & (1 << i)) {
+			leds_[i].on();
+		} else {
+			leds_[i].off();
+		}
+	}
+}
+
+State BasicMidi2CV::get_state() const {
 	return state_;
 }
 
-uint8_t BasicMidi2CV::get_midi_channel() {
+uint8_t BasicMidi2CV::get_midi_channel() const {
 	return midi_channel_;
 }
