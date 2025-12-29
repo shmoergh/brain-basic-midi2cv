@@ -6,30 +6,30 @@
 #include "brain-common/brain-gpio-setup.h"
 #include "brain-utils/midi-to-cv.h"
 #include "brain-ui/button.h"
-#include "brain-ui/led.h"
+#include "brain-ui/leds.h"
 #include "brain-ui/pots.h"
 #include "brain-utils/helpers.h"
 
 using brain::utils::MidiToCV;
 using brain::ui::Button;
-using brain::ui::Led;
+using brain::ui::Leds;
 using brain::ui::Pots;
 
-constexpr uint8_t NO_OF_LEDS = 6;
+// constexpr uint8_t NO_OF_LEDS = 6;
 constexpr uint8_t POT_CV_CHANNEL_THRESHOLD = 7;
 constexpr uint8_t LED_MASK_CHANNEL_A = 0b000111;
 constexpr uint8_t LED_MASK_CHANNEL_B = 0b111000;
 constexpr uint8_t POT_MIDI_CHANNEL = 0;
 constexpr uint8_t POT_CV_CHANNEL = 1;
 
-const uint8_t led_pins[NO_OF_LEDS] = {
-	GPIO_BRAIN_LED_1,
-	GPIO_BRAIN_LED_2,
-	GPIO_BRAIN_LED_3,
-	GPIO_BRAIN_LED_4,
-	GPIO_BRAIN_LED_5,
-	GPIO_BRAIN_LED_6
-};
+// const uint8_t led_pins[NO_OF_LEDS] = {
+// 	GPIO_BRAIN_LED_1,
+// 	GPIO_BRAIN_LED_2,
+// 	GPIO_BRAIN_LED_3,
+// 	GPIO_BRAIN_LED_4,
+// 	GPIO_BRAIN_LED_5,
+// 	GPIO_BRAIN_LED_6
+// };
 
 enum State {
 	kDefault = 0,
@@ -50,8 +50,9 @@ private:
 	Button button_a_;
 	Button button_b_;
 	Pots pots_;
+	Leds leds_;
 
-	std::vector<Led> leds_;
+	// std::vector<Led> leds_;
 	uint8_t midi_channel_;
 	brain::io::AudioCvOutChannel cv_channel_;
 	State state_;

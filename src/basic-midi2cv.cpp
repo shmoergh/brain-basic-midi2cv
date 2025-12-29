@@ -30,9 +30,6 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 	});
 
 	// Init leds
-	for (size_t i = 0; i < NO_OF_LEDS; i++) {
-		leds_[i] = Led(led_pins[i]);
-	}
 	reset_leds_ = false;
 
 	// Pots setup
@@ -80,7 +77,7 @@ void BasicMidi2CV::update() {
 
 			midi_channel_ = pot_a_value + 1;
 
-			set_leds_from_mask(pot_a_value);
+			leds_.set_from_mask(pot_a_value);
 			reset_leds_ = true;
 			break;
 		}
@@ -98,29 +95,17 @@ void BasicMidi2CV::update() {
 				led_mask = LED_MASK_CHANNEL_B;
 			}
 
-			set_leds_from_mask(led_mask);
+			leds_.set_from_mask(led_mask);
 			reset_leds_ = true;
 			break;
 		}
 
 		default: {
 			if (reset_leds_) {
-				for (size_t i = 0; i < NO_OF_LEDS; i++) {
-					leds_[i].off();
-				}
+				leds_.off_all();
 			}
 			reset_leds_ = false;
 			break;
-		}
-	}
-}
-
-void BasicMidi2CV::set_leds_from_mask(uint8_t mask) {
-	for (size_t i = 0; i < NO_OF_LEDS; i++) {
-		if (mask & (1 << i)) {
-			leds_[i].on();
-		} else {
-			leds_[i].off();
 		}
 	}
 }
