@@ -8,8 +8,7 @@ int main() {
 
 	printf("brain-basic-midi2cv started\n");
 
-	BasicMidi2CV midi_2_cv;
-	midi_2_cv.init();
+	BasicMidi2CV midi_2_cv(brain::io::AudioCvOutChannel::kChannelB, 1);
 
 	while (true) {
 		midi_2_cv.update();
