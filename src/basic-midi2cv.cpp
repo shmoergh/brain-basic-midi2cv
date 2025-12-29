@@ -30,6 +30,7 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 	});
 
 	// Init leds
+	leds_.init();
 	reset_leds_ = false;
 
 	// Pots setup
