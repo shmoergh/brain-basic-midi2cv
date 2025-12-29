@@ -5,7 +5,7 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 	button_b_(GPIO_BRAIN_BUTTON_2),
 	pots_()
 {
-	midi_to_cv_.init(cv_channel, midi_channel);
+	init(cv_channel, midi_channel);
 	midi_channel_ = midi_channel;
 	cv_channel_ = cv_channel;
 	state_ = State::kDefault;
@@ -33,13 +33,14 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 	leds_.init();
 	leds_.startup_animation();
 	reset_leds_ = false;
+	playhead_led_ = 0;
+	key_pressed_ = false;
 
 	// Pots setup
 	brain::ui::PotsConfig pots_config = brain::ui::create_default_config();
 	pots_config.simple = true;
 	pots_config.output_resolution = 4;
 	pots_.init(pots_config);
-
 }
 
 void BasicMidi2CV::button_a_on_press() {
@@ -52,7 +53,7 @@ void BasicMidi2CV::button_a_on_press() {
 void BasicMidi2CV::button_a_on_release() {
 	printf("Button A released\n");
 	if (state_ == State::kSetMidiChannel) {
-		midi_to_cv_.set_midi_channel(midi_channel_);
+		set_midi_channel(midi_channel_);
 	}
 	state_ = State::kDefault;
 }
@@ -67,20 +68,19 @@ void BasicMidi2CV::button_b_on_press() {
 void BasicMidi2CV::button_b_on_release() {
 	printf("Button B released\n");
 	if (state_ == State::kSetCVChannel) {
-		midi_to_cv_.set_pitch_channel(cv_channel_);
+		set_pitch_channel(cv_channel_);
 	}
 	state_ = State::kDefault;
 }
 
 void BasicMidi2CV::update() {
-	midi_to_cv_.update();
 	button_a_.update();
 	button_b_.update();
 
 	switch (state_) {
 		// Read pot X and set MIDI channel accordingly
 		case State::kSetMidiChannel: {
-			// printf("Set MIDI channel\n");
+			if (is_note_playing()) break;
 			uint8_t pot_a_value = pots_.get(POT_MIDI_CHANNEL);
 			printf("Pot X: %d\n", pot_a_value);
 			pot_a_value = clamp(0, 15, pot_a_value);
@@ -94,6 +94,7 @@ void BasicMidi2CV::update() {
 
 		// Read pot Y and set CV channel
 		case State::kSetCVChannel: {
+			if (is_note_playing()) break;
 			uint8_t pot_b_value = pots_.get(POT_CV_CHANNEL);
 			printf("Pot B value: %d\n", pot_b_value);
 			uint8_t led_mask = 0b000000;
@@ -112,6 +113,19 @@ void BasicMidi2CV::update() {
 		}
 
 		default: {
+			MidiToCV::update();
+			if (is_note_playing()) {
+				leds_.on(playhead_led_);
+				key_pressed_ = true;
+			} else {
+				if (key_pressed_) {
+					leds_.off(playhead_led_);
+					playhead_led_++;
+					if (playhead_led_ > 5) playhead_led_ = 0;
+					key_pressed_ = false;
+				}
+			}
+
 			if (reset_leds_) {
 				leds_.off_all();
 			}
