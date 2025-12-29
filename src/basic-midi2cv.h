@@ -18,13 +18,17 @@ public:
 	void update();
 
 private:
+	static BasicMidi2CV* instance_;
 	MidiToCV midi_to_cv_;
 	Button button_a_;
 	Button button_b_;
 	Led led_1_;
 
-	// static void button_a_on_release_callback();
-	// void button_a_on_release();
+	static void button_a_on_release_callback();
+	static void button_b_on_release_callback();
+
+	void button_a_on_release();
+	void button_b_on_release();
 };
 
 #endif
