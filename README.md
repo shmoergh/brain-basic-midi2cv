@@ -26,3 +26,9 @@ cd ..
 git add brain-sdk
 git commit -m "Update brain-sdk"
 ```
+
+or:
+
+```
+git submodule update --remote brain-sdk
+```

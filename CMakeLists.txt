@@ -1,3 +1,5 @@
+file(GLOB FILES src/*.cpp src/*.h)
+
 cmake_minimum_required(VERSION 3.22)
 
 # Include Pico SDK (from brain-sdk subdirectory)
@@ -11,7 +13,7 @@ pico_sdk_init()
 # Add brain-sdk which includes brain libraries
 add_subdirectory(brain-sdk)
 
-add_executable(brain-default-midi2cv main.cpp)
+add_executable(brain-default-midi2cv ${FILES})
 
 target_link_libraries(brain-default-midi2cv
 	pico_stdlib
