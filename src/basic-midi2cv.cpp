@@ -2,7 +2,8 @@
 
 BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi_channel) :
 	button_a_(GPIO_BRAIN_BUTTON_1),
-	button_b_(GPIO_BRAIN_BUTTON_2)
+	button_b_(GPIO_BRAIN_BUTTON_2),
+	pots_()
 {
 	midi_to_cv_.init(cv_channel, 1);
 	midi_channel_ = midi_channel;
@@ -31,6 +32,10 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 	for (size_t i = 0; i < NO_OF_LEDS; i++) {
 		leds_[i] = Led(led_pins[i]);
 	}
+
+	// Pots setup
+	pots_.set_simple(true);
+	pots_.set_output_resolution(4);
 }
 
 void BasicMidi2CV::button_a_on_press() {
@@ -63,6 +68,7 @@ void BasicMidi2CV::update() {
 	{
 	// Read pot X and set MIDI channel accordingly
 	case State::kSetMidiChannel:
+		pots_.get(0);
 		midi_channel_ = 1;
 		break;
 

@@ -7,10 +7,12 @@
 #include "brain-utils/midi-to-cv.h"
 #include "brain-ui/button.h"
 #include "brain-ui/led.h"
+#include "brain-ui/pots.h"
 
 using brain::utils::MidiToCV;
 using brain::ui::Button;
 using brain::ui::Led;
+using brain::ui::Pots;
 
 #define NO_OF_LEDS 6
 
@@ -23,7 +25,7 @@ const uint8_t led_pins[NO_OF_LEDS] = {
 	GPIO_BRAIN_LED_6
 };
 
-const enum State {
+enum State {
 	kDefault = 0,
 	kSetMidiChannel = 1,
 	kSetCVChannel = 2
@@ -41,6 +43,8 @@ private:
 	MidiToCV midi_to_cv_;
 	Button button_a_;
 	Button button_b_;
+	Pots pots_;
+
 	std::vector<Led> leds_;
 	uint8_t midi_channel_;
 	brain::io::AudioCvOutChannel cv_channel_;
