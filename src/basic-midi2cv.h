@@ -18,7 +18,6 @@ public:
 	void update();
 
 private:
-	static BasicMidi2CV* instance_;
 	MidiToCV midi_to_cv_;
 	Button button_a_;
 	Button button_b_;
