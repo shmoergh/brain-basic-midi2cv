@@ -87,7 +87,7 @@ void BasicMidi2CV::update() {
 
 			midi_channel_ = pot_a_value + 1;
 
-			leds_.set_from_mask(pot_a_value);
+			leds_.set_from_mask(midi_channel_);
 			reset_leds_ = true;
 			break;
 		}
