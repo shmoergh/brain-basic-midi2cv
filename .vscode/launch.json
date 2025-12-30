@@ -5,7 +5,7 @@
             "device": "RP2040",
             "gdbPath": "arm-none-eabi-gdb",
             "cwd": "${workspaceRoot}",
-            "executable": "${workspaceFolder}/build/brain-default-midi2cv.elf",
+            "executable": "${workspaceFolder}/build/brain-basic-midi2cv.elf",
             "preLaunchTask": "CMake Build",
             "request": "launch",
             "type": "cortex-debug",
