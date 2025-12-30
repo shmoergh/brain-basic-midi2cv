@@ -26,8 +26,7 @@ enum State {
 	kDefault = 0,
 	kSetMidiChannel = 1,
 	kSetCVChannel = 2,
-	kPanicStarted = 3,
-	kPanicExecuted = 4
+	kPanicStarted = 3
 };
 
 class BasicMidi2CV : public MidiToCV
@@ -61,6 +60,8 @@ private:
 
 	void button_b_on_press();
 	void button_b_on_release();
+
+	void reset_panic();
 };
 
 #endif

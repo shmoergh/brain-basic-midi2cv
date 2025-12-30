@@ -64,6 +64,9 @@ void BasicMidi2CV::button_a_on_release() {
 	if (state_ == State::kSetMidiChannel) {
 		set_midi_channel(midi_channel_);
 	}
+	if (state_ == State::kPanicStarted) {
+		reset_panic();
+	}
 	state_ = State::kDefault;
 }
 
@@ -80,6 +83,9 @@ void BasicMidi2CV::button_b_on_press() {
 void BasicMidi2CV::button_b_on_release() {
 	if (state_ == State::kSetCVChannel) {
 		set_pitch_channel(cv_channel_);
+	}
+	if (state_ == State::kPanicStarted) {
+		reset_panic();
 	}
 	state_ = State::kDefault;
 }
@@ -127,13 +133,17 @@ void BasicMidi2CV::update() {
 		case State::kPanicStarted: {
 			if (panic_timer_start_ == 0) {
 				panic_timer_start_ = get_absolute_time();
+				leds_.on_all();
 			}
 
 			absolute_time_t now = get_absolute_time();
 			if (absolute_time_diff_us(panic_timer_start_, now) / 1000 >= PANIC_HOLD_THRESHOLD_MS) {
 				MidiToCV::set_gate(false);
 				MidiToCV::reset_note_stack();
+				state_ = State::kDefault;
+				reset_panic();
 			}
+			break;
 		}
 
 		default: {
@@ -165,4 +175,9 @@ State BasicMidi2CV::get_state() const {
 
 uint8_t BasicMidi2CV::get_midi_channel() const {
 	return midi_channel_;
+}
+
+void BasicMidi2CV::reset_panic() {
+	panic_timer_start_ = 0;
+	leds_.off_all();
 }
