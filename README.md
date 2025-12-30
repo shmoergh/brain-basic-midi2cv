@@ -2,6 +2,10 @@
 
 A versatile MIDI to CV converter firmware for the Shmøergh Moduleur Brain module. Converts incoming MIDI note messages to 1V/octave CV pitch and gate signals, with configurable MIDI channel and CV output routing.
 
+## Install
+
+Flash the `brain-basic-midi2cv.uf2` file to your Brain module by holding the BOOTSEL button while connecting it to your computer, then copy the .uf2 file to the mounted drive.
+
 ## Features
 
 - **MIDI to CV/Gate conversion**: Converts MIDI note-on/note-off messages to 1V/octave pitch CV and gate signals
@@ -46,10 +50,6 @@ cd build
 cmake ..
 make
 ```
-
-## Flash
-
-Flash the generated `brain-basic-midi2cv.uf2` file to your Brain module by holding the BOOTSEL button while connecting it to your computer, then copy the .uf2 file to the mounted drive.
 
 ## Development
 
