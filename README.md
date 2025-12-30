@@ -4,7 +4,7 @@ A versatile MIDI to CV converter firmware for the Shmøergh Moduleur Brain modul
 
 ## Install
 
-Flash the `brain-basic-midi2cv.uf2` file to your Brain module by holding the BOOTSEL button while connecting it to your computer, then copy the .uf2 file to the mounted drive.
+Flash the `brain-basic-midi2cv.uf2` file to your Brain module by holding the BOOTSEL button while connecting it to your computer, then copy the .uf2 file to the mounted drive. If you're using a Pico 2, use the one with `pico-2` in the filename.
 
 ## Features
 
