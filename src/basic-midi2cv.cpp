@@ -29,6 +29,9 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 		button_b_on_release();
 	});
 
+	button_a_pressed_ = false;
+	button_b_pressed_ = false;
+
 	// Init leds
 	leds_.init();
 	leds_.startup_animation();
@@ -41,17 +44,23 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 	pots_config.simple = true;
 	pots_config.output_resolution = 4;
 	pots_.init(pots_config);
+
+	// Panic
+	panic_timer_start_ = 0;
 }
 
 void BasicMidi2CV::button_a_on_press() {
-	printf("Button A pressed\n");
-	if (state_ == State::kDefault) {
+	if (state_ == State::kDefault && state_ != State::kSetMidiChannel) {
 		state_ = State::kSetMidiChannel;
+	}
+
+	// If button B is pressed and button A is pressed then panic mode starts
+	if (state_ == State::kSetCVChannel) {
+		state_ = State::kPanicStarted;
 	}
 }
 
 void BasicMidi2CV::button_a_on_release() {
-	printf("Button A released\n");
 	if (state_ == State::kSetMidiChannel) {
 		set_midi_channel(midi_channel_);
 	}
@@ -59,14 +68,16 @@ void BasicMidi2CV::button_a_on_release() {
 }
 
 void BasicMidi2CV::button_b_on_press() {
-	printf("Button B pressed\n");
-	if (state_ == State::kDefault) {
+	if (state_ == State::kDefault && state_ != State::kSetCVChannel) {
 		state_ = State::kSetCVChannel;
+	}
+
+	if (state_ == State::kSetMidiChannel) {
+		state_ = State::kPanicStarted;
 	}
 }
 
 void BasicMidi2CV::button_b_on_release() {
-	printf("Button B released\n");
 	if (state_ == State::kSetCVChannel) {
 		set_pitch_channel(cv_channel_);
 	}
@@ -110,6 +121,19 @@ void BasicMidi2CV::update() {
 			leds_.set_from_mask(led_mask);
 			reset_leds_ = true;
 			break;
+		}
+
+		// Panic
+		case State::kPanicStarted: {
+			if (panic_timer_start_ == 0) {
+				panic_timer_start_ = get_absolute_time();
+			}
+
+			absolute_time_t now = get_absolute_time();
+			if (absolute_time_diff_us(panic_timer_start_, now) / 1000 >= PANIC_HOLD_THRESHOLD_MS) {
+				MidiToCV::set_gate(false);
+				MidiToCV::reset_note_stack();
+			}
 		}
 
 		default: {

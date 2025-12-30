@@ -20,11 +20,14 @@ constexpr uint8_t LED_MASK_CHANNEL_A = 0b000111;
 constexpr uint8_t LED_MASK_CHANNEL_B = 0b111000;
 constexpr uint8_t POT_MIDI_CHANNEL = 0;
 constexpr uint8_t POT_CV_CHANNEL = 1;
+constexpr uint32_t PANIC_HOLD_THRESHOLD_MS = 2000;
 
 enum State {
 	kDefault = 0,
 	kSetMidiChannel = 1,
-	kSetCVChannel = 2
+	kSetCVChannel = 2,
+	kPanicStarted = 3,
+	kPanicExecuted = 4
 };
 
 class BasicMidi2CV : public MidiToCV
@@ -38,6 +41,8 @@ public:
 private:
 	Button button_a_;
 	Button button_b_;
+	bool button_a_pressed_;
+	bool button_b_pressed_;
 	Pots pots_;
 	Leds leds_;
 
@@ -47,6 +52,7 @@ private:
 	uint8_t key_pressed_;
 	uint8_t playhead_led_;
 	bool reset_leds_;
+	absolute_time_t panic_timer_start_;
 
 	void set_leds_from_mask(uint8_t mask);
 
