@@ -24,6 +24,13 @@ Once flashed, the module will:
 - Convert MIDI note-on messages to gate high and MIDI note-off to gate low
 - Output the configured CC-to-CV signal on the secondary CV channel (velocity, modwheel, or unison pitch)
 
+### Cheat Sheet
+
+<img width="2840" height="4104" alt="image" src="https://github.com/user-attachments/assets/79221d9e-9cee-4884-a5c8-4df0a91e5380" />
+
+[Printable version (PDF)](https://github.com/user-attachments/files/24395314/brain-cheatsheet.pdf)
+
+
 ### Configuring MIDI Channel
 
 1. **Press and hold Button A** (left button)
