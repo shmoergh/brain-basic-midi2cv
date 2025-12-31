@@ -30,6 +30,10 @@ Once flashed, the module will:
 
 [Printable version (PDF)](https://github.com/user-attachments/files/24395314/brain-cheatsheet.pdf)
 
+### Walkthrough
+
+[Watch walkthrough on YouTube](https://www.youtube.com/watch?v=gNz6zGBfJJQ)
+
 
 ### Configuring MIDI Channel
 
