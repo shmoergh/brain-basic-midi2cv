@@ -6,6 +6,8 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 	pots_()
 {
 	init(cv_channel, midi_channel);
+	set_max_cc_voltage(5);
+
 	midi_channel_ = midi_channel;
 	cv_channel_ = cv_channel;
 	state_ = State::kDefault;
@@ -29,6 +31,9 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 		button_b_on_release();
 	});
 
+	button_a_pressed_ = false;
+	button_b_pressed_ = false;
+
 	// Init leds
 	leds_.init();
 	leds_.startup_animation();
@@ -39,36 +44,55 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 	// Pots setup
 	brain::ui::PotsConfig pots_config = brain::ui::create_default_config();
 	pots_config.simple = true;
-	pots_config.output_resolution = 4;
+	pots_config.output_resolution = 8;
 	pots_.init(pots_config);
+
+	// Panic
+	panic_timer_start_ = 0;
+
+	// Load settings
+	mode_ = MidiToCV::Mode::kDefault;
+	load_settings();
 }
 
 void BasicMidi2CV::button_a_on_press() {
-	printf("Button A pressed\n");
-	if (state_ == State::kDefault) {
+	if (state_ == State::kDefault && state_ != State::kSetMidiChannel) {
 		state_ = State::kSetMidiChannel;
+	}
+
+	// If button B is pressed and button A is pressed then panic mode starts
+	if (state_ == State::kSetCVChannel) {
+		state_ = State::kPanicStarted;
 	}
 }
 
 void BasicMidi2CV::button_a_on_release() {
-	printf("Button A released\n");
 	if (state_ == State::kSetMidiChannel) {
 		set_midi_channel(midi_channel_);
+	}
+	if (state_ == State::kPanicStarted) {
+		reset_panic();
 	}
 	state_ = State::kDefault;
 }
 
 void BasicMidi2CV::button_b_on_press() {
-	printf("Button B pressed\n");
-	if (state_ == State::kDefault) {
+	if (state_ == State::kDefault && state_ != State::kSetCVChannel) {
 		state_ = State::kSetCVChannel;
+	}
+
+	if (state_ == State::kSetMidiChannel) {
+		state_ = State::kPanicStarted;
 	}
 }
 
 void BasicMidi2CV::button_b_on_release() {
-	printf("Button B released\n");
 	if (state_ == State::kSetCVChannel) {
 		set_pitch_channel(cv_channel_);
+		MidiToCV::set_mode(mode_);
+	}
+	if (state_ == State::kPanicStarted) {
+		reset_panic();
 	}
 	state_ = State::kDefault;
 }
@@ -81,34 +105,61 @@ void BasicMidi2CV::update() {
 		// Read pot X and set MIDI channel accordingly
 		case State::kSetMidiChannel: {
 			if (is_note_playing()) break;
-			uint8_t pot_a_value = pots_.get(POT_MIDI_CHANNEL);
-			printf("Pot X: %d\n", pot_a_value);
-			pot_a_value = clamp(0, 15, pot_a_value);
-
-			midi_channel_ = pot_a_value + 1;
-
+			update_midi_channel_setting();
 			leds_.set_from_mask(midi_channel_);
 			reset_leds_ = true;
 			break;
 		}
 
-		// Read pot Y and set CV channel
+		// Read CV settings
 		case State::kSetCVChannel: {
 			if (is_note_playing()) break;
-			uint8_t pot_b_value = pots_.get(POT_CV_CHANNEL);
-			printf("Pot B value: %d\n", pot_b_value);
-			uint8_t led_mask = 0b000000;
 
-			if (pot_b_value < POT_CV_CHANNEL_THRESHOLD) {
-				cv_channel_ = brain::io::AudioCvOutChannel::kChannelA;
-				led_mask = LED_MASK_CHANNEL_A;
+			update_cv_channel_setting();
+			uint8_t cv_led_mask = 0b000000;
+			if (cv_channel_ == brain::io::AudioCvOutChannel::kChannelA) {
+				cv_led_mask = LED_MASK_CHANNEL_A;
 			} else {
-				cv_channel_ = brain::io::AudioCvOutChannel::kChannelB;
-				led_mask = LED_MASK_CHANNEL_B;
+				cv_led_mask = LED_MASK_CHANNEL_B;
 			}
 
+			update_cc_setting();
+			uint8_t cc_led_mask = 0b000000;
+			switch (mode_) {
+				case 0:
+					cc_led_mask = LED_MASK_MODE_DEFAULT;
+					break;
+				case 1:
+					cc_led_mask = LED_MASK_MODE_MODWHEEL;
+					break;
+				case 2:
+					cc_led_mask = LED_MASK_MODE_UNISON;
+					break;
+
+			default:
+				break;
+			}
+
+			uint8_t led_mask = cv_led_mask | cc_led_mask;
 			leds_.set_from_mask(led_mask);
 			reset_leds_ = true;
+			break;
+		}
+
+		// Panic
+		case State::kPanicStarted: {
+			if (panic_timer_start_ == 0) {
+				panic_timer_start_ = get_absolute_time();
+				leds_.on_all();
+			}
+
+			absolute_time_t now = get_absolute_time();
+			if (absolute_time_diff_us(panic_timer_start_, now) / 1000 >= PANIC_HOLD_THRESHOLD_MS) {
+				MidiToCV::set_gate(false);
+				MidiToCV::reset_note_stack();
+				state_ = State::kDefault;
+				reset_panic();
+			}
 			break;
 		}
 
@@ -141,4 +192,44 @@ State BasicMidi2CV::get_state() const {
 
 uint8_t BasicMidi2CV::get_midi_channel() const {
 	return midi_channel_;
+}
+
+void BasicMidi2CV::reset_panic() {
+	panic_timer_start_ = 0;
+	leds_.off_all();
+}
+
+void BasicMidi2CV::update_midi_channel_setting() {
+	uint8_t pot_a_value = pots_.get(POT_MIDI_CHANNEL);
+
+	// Divide into 16 bins (0-15) for stable MIDI channel selection
+	uint8_t binned_value = pot_a_value / 16;
+	midi_channel_ = binned_value + 1;
+}
+
+void BasicMidi2CV::update_cv_channel_setting() {
+	uint8_t pot_b_value = pots_.get(POT_CV_CHANNEL);
+
+	if (pot_b_value < POT_CV_CHANNEL_THRESHOLD) {
+		cv_channel_ = brain::io::AudioCvOutChannel::kChannelA;
+	} else {
+		cv_channel_ = brain::io::AudioCvOutChannel::kChannelB;
+	}
+}
+
+void BasicMidi2CV::update_cc_setting() {
+	uint8_t pot_c_value = pots_.get(POT_MODE);
+	mode_ = MidiToCV::Mode(floor(3 * pot_c_value / 256));
+	printf("Mode: %d\n", mode_);
+}
+
+void BasicMidi2CV::load_settings() {
+	update_midi_channel_setting();
+	set_midi_channel(midi_channel_);
+
+	update_cv_channel_setting();
+	set_pitch_channel(cv_channel_);
+
+	update_cc_setting();
+	set_mode(mode_);
 }

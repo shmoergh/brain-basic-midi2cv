@@ -2,6 +2,7 @@
 #define BASIC_MIDI_TO_CV_H
 
 #include <vector>
+#include <math.h>
 
 #include "brain-common/brain-gpio-setup.h"
 #include "brain-utils/midi-to-cv.h"
@@ -15,16 +16,22 @@ using brain::ui::Button;
 using brain::ui::Leds;
 using brain::ui::Pots;
 
-constexpr uint8_t POT_CV_CHANNEL_THRESHOLD = 7;
-constexpr uint8_t LED_MASK_CHANNEL_A = 0b000111;
-constexpr uint8_t LED_MASK_CHANNEL_B = 0b111000;
+constexpr uint8_t POT_CV_CHANNEL_THRESHOLD = 127;
+constexpr uint8_t LED_MASK_CHANNEL_A 		= 0b000001;
+constexpr uint8_t LED_MASK_CHANNEL_B 		= 0b000010;
+constexpr uint8_t LED_MASK_MODE_DEFAULT 	= 0b001000;
+constexpr uint8_t LED_MASK_MODE_MODWHEEL 	= 0b010000;
+constexpr uint8_t LED_MASK_MODE_UNISON 		= 0b100000;
 constexpr uint8_t POT_MIDI_CHANNEL = 0;
 constexpr uint8_t POT_CV_CHANNEL = 1;
+constexpr uint8_t POT_MODE = 2;
+constexpr uint32_t PANIC_HOLD_THRESHOLD_MS = 2000;
 
 enum State {
 	kDefault = 0,
 	kSetMidiChannel = 1,
-	kSetCVChannel = 2
+	kSetCVChannel = 2,
+	kPanicStarted = 3
 };
 
 class BasicMidi2CV : public MidiToCV
@@ -38,15 +45,19 @@ public:
 private:
 	Button button_a_;
 	Button button_b_;
+	bool button_a_pressed_;
+	bool button_b_pressed_;
 	Pots pots_;
 	Leds leds_;
 
 	uint8_t midi_channel_;
 	brain::io::AudioCvOutChannel cv_channel_;
+	MidiToCV::Mode mode_;
 	State state_;
 	uint8_t key_pressed_;
 	uint8_t playhead_led_;
 	bool reset_leds_;
+	absolute_time_t panic_timer_start_;
 
 	void set_leds_from_mask(uint8_t mask);
 
@@ -55,6 +66,13 @@ private:
 
 	void button_b_on_press();
 	void button_b_on_release();
+
+	void reset_panic();
+
+	void update_midi_channel_setting();
+	void update_cv_channel_setting();
+	void update_cc_setting();
+	void load_settings();
 };
 
 #endif
