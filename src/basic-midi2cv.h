@@ -2,6 +2,7 @@
 #define BASIC_MIDI_TO_CV_H
 
 #include <vector>
+#include <math.h>
 
 #include "brain-common/brain-gpio-setup.h"
 #include "brain-utils/midi-to-cv.h"
@@ -16,10 +17,14 @@ using brain::ui::Leds;
 using brain::ui::Pots;
 
 constexpr uint8_t POT_CV_CHANNEL_THRESHOLD = 127;
-constexpr uint8_t LED_MASK_CHANNEL_A = 0b000111;
-constexpr uint8_t LED_MASK_CHANNEL_B = 0b111000;
+constexpr uint8_t LED_MASK_CHANNEL_A 		= 0b000001;
+constexpr uint8_t LED_MASK_CHANNEL_B 		= 0b000010;
+constexpr uint8_t LED_MASK_MODE_DEFAULT 	= 0b001000;
+constexpr uint8_t LED_MASK_MODE_MODWHEEL 	= 0b010000;
+constexpr uint8_t LED_MASK_MODE_UNISON 		= 0b100000;
 constexpr uint8_t POT_MIDI_CHANNEL = 0;
 constexpr uint8_t POT_CV_CHANNEL = 1;
+constexpr uint8_t POT_MODE = 2;
 constexpr uint32_t PANIC_HOLD_THRESHOLD_MS = 2000;
 
 enum State {

@@ -115,18 +115,40 @@ void BasicMidi2CV::update() {
 		// Read pot Y and set CV channel
 		case State::kSetCVChannel: {
 			if (is_note_playing()) break;
-			uint8_t pot_b_value = pots_.get(POT_CV_CHANNEL);
-			printf("Pot B value: %d\n", pot_b_value);
-			uint8_t led_mask = 0b000000;
 
+			uint8_t pot_b_value = pots_.get(POT_CV_CHANNEL);
+			uint8_t pot_c_value = pots_.get(POT_MODE);
+
+			uint8_t cv_led_mask = 0b000000;
 			if (pot_b_value < POT_CV_CHANNEL_THRESHOLD) {
 				cv_channel_ = brain::io::AudioCvOutChannel::kChannelA;
-				led_mask = LED_MASK_CHANNEL_A;
+				cv_led_mask = LED_MASK_CHANNEL_A;
 			} else {
 				cv_channel_ = brain::io::AudioCvOutChannel::kChannelB;
-				led_mask = LED_MASK_CHANNEL_B;
+				cv_led_mask = LED_MASK_CHANNEL_B;
 			}
 
+			uint16_t new_mode = floor(3 * pot_c_value / 256);
+			uint8_t cc_led_mask = 0b000000;
+			switch (new_mode) {
+				case 0:
+					cc_led_mask = LED_MASK_MODE_DEFAULT;
+					MidiToCV::set_mode(MidiToCV::Mode::kDefault);
+					break;
+					case 1:
+					cc_led_mask = LED_MASK_MODE_MODWHEEL;
+					MidiToCV::set_mode(MidiToCV::Mode::kModWheel);
+					break;
+					case 2:
+					cc_led_mask = LED_MASK_MODE_UNISON;
+					MidiToCV::set_mode(MidiToCV::Mode::kUnison);
+					break;
+
+			default:
+				break;
+			}
+
+			uint8_t led_mask = cv_led_mask | cc_led_mask;
 			leds_.set_from_mask(led_mask);
 			reset_leds_ = true;
 			break;
