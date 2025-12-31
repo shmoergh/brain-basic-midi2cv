@@ -6,6 +6,8 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 	pots_()
 {
 	init(cv_channel, midi_channel);
+	set_max_cc_voltage(5);
+
 	midi_channel_ = midi_channel;
 	cv_channel_ = cv_channel;
 	state_ = State::kDefault;
@@ -42,7 +44,7 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 	// Pots setup
 	brain::ui::PotsConfig pots_config = brain::ui::create_default_config();
 	pots_config.simple = true;
-	pots_config.output_resolution = 4;
+	pots_config.output_resolution = 8;
 	pots_.init(pots_config);
 
 	// Panic
@@ -99,11 +101,12 @@ void BasicMidi2CV::update() {
 		case State::kSetMidiChannel: {
 			if (is_note_playing()) break;
 			uint8_t pot_a_value = pots_.get(POT_MIDI_CHANNEL);
-			printf("Pot X: %d\n", pot_a_value);
-			pot_a_value = clamp(0, 15, pot_a_value);
 
-			midi_channel_ = pot_a_value + 1;
+			// Divide into 16 bins (0-15) for stable MIDI channel selection
+			uint8_t binned_value = pot_a_value / 16;
+			uint8_t new_midi_channel = binned_value + 1;
 
+			midi_channel_ = new_midi_channel;
 			leds_.set_from_mask(midi_channel_);
 			reset_leds_ = true;
 			break;

@@ -15,7 +15,7 @@ using brain::ui::Button;
 using brain::ui::Leds;
 using brain::ui::Pots;
 
-constexpr uint8_t POT_CV_CHANNEL_THRESHOLD = 7;
+constexpr uint8_t POT_CV_CHANNEL_THRESHOLD = 127;
 constexpr uint8_t LED_MASK_CHANNEL_A = 0b000111;
 constexpr uint8_t LED_MASK_CHANNEL_B = 0b111000;
 constexpr uint8_t POT_MIDI_CHANNEL = 0;
