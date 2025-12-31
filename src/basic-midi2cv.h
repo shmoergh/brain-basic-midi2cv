@@ -52,6 +52,7 @@ private:
 
 	uint8_t midi_channel_;
 	brain::io::AudioCvOutChannel cv_channel_;
+	MidiToCV::Mode mode_;
 	State state_;
 	uint8_t key_pressed_;
 	uint8_t playhead_led_;
@@ -67,6 +68,11 @@ private:
 	void button_b_on_release();
 
 	void reset_panic();
+
+	void update_midi_channel_setting();
+	void update_cv_channel_setting();
+	void update_cc_setting();
+	void load_settings();
 };
 
 #endif
