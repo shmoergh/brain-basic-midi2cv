@@ -11,6 +11,8 @@ Flash the `brain-basic-midi2cv.uf2` file to your Brain module by holding the BOO
 - **MIDI to CV/Gate conversion**: Converts MIDI note-on/note-off messages to 1V/octave pitch CV and gate signals
 - **Configurable MIDI channel**: Listen to any MIDI channel (1-16) with visual feedback via LEDs
 - **Dual CV outputs**: Route pitch and gate to either output channel of the Brain module
+- **CC to CV mapping**: Secondary CV output can provide velocity, modwheel, or unison pitch (0-5V)
+- **Panic function**: Clear stuck notes by holding both buttons for 2 seconds
 - **Interactive configuration**: Use buttons and potentiometers to change settings on the fly
 - **Visual feedback**: 6-LED display shows current MIDI channel or selected CV output during configuration
 
@@ -20,26 +22,44 @@ Once flashed, the module will:
 - Listen for MIDI notes on the configured MIDI channel (default: channel 1)
 - Output pitch CV (1V/octave) and gate signals on the configured CV channel (default: Channel A)
 - Convert MIDI note-on messages to gate high and MIDI note-off to gate low
+- Output the configured CC-to-CV signal on the secondary CV channel (velocity, modwheel, or unison pitch)
 
 ### Configuring MIDI Channel
 
 1. **Press and hold Button A** (left button)
 2. **Turn Pot X** (left potentiometer) to select MIDI channel 1-16
-   - LEDs will display the selected channel number in binary (0-15, representing channels 1-16)
+   - LEDs will display the selected channel number in binary (1-16)
 3. **Release Button A** to save the setting
 
 ### Configuring CV Output Channel
 
 1. **Press and hold Button B** (right button)
-2. **Turn Pot Y** (middle potentiometer) to select the output channel:
+2. **Turn Pot Y** (middle pot) to select the output channel:
    - Turn fully counter-clockwise: **Channel A** (LEDs 1-3 illuminate)
    - Turn fully clockwise: **Channel B** (LEDs 4-6 illuminate)
 3. **Release Button B** to save the setting
 
+### Configuring CC to CV Mode
+
+1. **Press and hold Button B**
+2. **Turn Pot Z** (rightmost pot) to select the CC-to-CV mode:
+   - **Velocity**: Outputs 0-5V based on note velocity
+   - **Modwheel**: Outputs 0-5V based on MIDI CC1 (modulation wheel)
+   - **Unison**: Outputs the same pitch CV as the primary channel
+3. **Release Button Z** to save the setting
+
+### Panic Function
+
+If MIDI notes get stuck (e.g., if the MIDI cable is disconnected during a note):
+
+1. **Press and hold both Button A and Button B simultaneously for 2 seconds**
+2. The note stack will be cleared and the gate will turn off
+
 ### LED Indicators
 
-- **During MIDI channel selection**: LEDs show channel number in binary (0-15)
+- **During MIDI channel selection**: LEDs show channel number in binary (1-16)
 - **During CV channel selection**: Left 3 LEDs for Channel A, right 3 LEDs for Channel B
+- **During CC-to-CV mode selection**: LEDs indicate the selected mode
 - **During normal operation**: LEDs turn off to conserve power
 
 ## Build
