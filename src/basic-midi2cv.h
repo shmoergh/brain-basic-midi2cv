@@ -8,12 +8,15 @@
 #include "brain-utils/midi-to-cv.h"
 #include "brain-ui/button.h"
 #include "brain-ui/leds.h"
+#include "brain-ui/pot-multi-function.h"
 #include "brain-ui/pots.h"
 #include "brain-utils/helpers.h"
 
 using brain::utils::MidiToCV;
 using brain::ui::Button;
 using brain::ui::Leds;
+using brain::ui::PotMultiFunction;
+using brain::ui::PotMode;
 using brain::ui::Pots;
 
 constexpr uint8_t POT_CV_CHANNEL_THRESHOLD = 127;
@@ -25,6 +28,12 @@ constexpr uint8_t LED_MASK_MODE_UNISON 		= 0b100000;
 constexpr uint8_t POT_MIDI_CHANNEL = 0;
 constexpr uint8_t POT_CV_CHANNEL = 1;
 constexpr uint8_t POT_MODE = 2;
+constexpr uint8_t POT_FUNCTION_ID_NONE = 255;
+constexpr uint8_t POT_FUNCTION_ID_MIDI_CHANNEL = 1;
+constexpr uint8_t POT_FUNCTION_ID_CV_CHANNEL = 2;
+constexpr uint8_t POT_FUNCTION_ID_MODE = 3;
+constexpr uint8_t POT_FUNCTION_PICKUP_HYSTERESIS = 1;
+constexpr uint8_t NUM_POTS = 3;
 constexpr uint32_t PANIC_HOLD_THRESHOLD_MS = 2000;
 
 enum State {
@@ -48,6 +57,7 @@ private:
 	bool button_a_pressed_;
 	bool button_b_pressed_;
 	Pots pots_;
+	PotMultiFunction pot_multi_function_;
 	Leds leds_;
 
 	uint8_t midi_channel_;
@@ -68,6 +78,9 @@ private:
 	void button_b_on_release();
 
 	void reset_panic();
+	void init_pot_functions();
+	void set_active_pot_functions(uint8_t pot_0_function, uint8_t pot_1_function, uint8_t pot_2_function);
+	void reset_pot_function_context();
 
 	void update_midi_channel_setting();
 	void update_cv_channel_setting();
