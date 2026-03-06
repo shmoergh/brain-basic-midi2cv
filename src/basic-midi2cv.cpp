@@ -133,18 +133,21 @@ void BasicMidi2CV::update() {
 			pot_multi_function_.clear_changed_flags();
 			uint8_t cc_led_mask = 0b000000;
 			switch (mode_) {
-				case 0:
-					cc_led_mask = LED_MASK_MODE_DEFAULT;
+				case MidiToCV::Mode::kDefault:
+					cc_led_mask = LED_MASK_MODE_VELOCITY;
 					break;
-				case 1:
+				case MidiToCV::Mode::kModWheel:
 					cc_led_mask = LED_MASK_MODE_MODWHEEL;
 					break;
-				case 2:
+				case MidiToCV::Mode::kUnison:
 					cc_led_mask = LED_MASK_MODE_UNISON;
 					break;
+				case MidiToCV::Mode::kDuo:
+					cc_led_mask = LED_MASK_MODE_DUO;
+					break;
 
-			default:
-				break;
+				default:
+					break;
 			}
 
 			uint8_t led_mask = cv_led_mask | cc_led_mask;
@@ -275,7 +278,7 @@ void BasicMidi2CV::update_cv_channel_setting() {
 void BasicMidi2CV::update_cc_setting() {
 	if (!pot_multi_function_.get_changed(POT_FUNCTION_ID_MODE)) return;
 	uint8_t pot_c_value = pot_multi_function_.get_value(POT_FUNCTION_ID_MODE);
-	mode_ = MidiToCV::Mode((3 * pot_c_value) / 256);
+	mode_ = MidiToCV::Mode((4 * pot_c_value) / 256);
 }
 
 void BasicMidi2CV::load_settings() {
@@ -293,6 +296,6 @@ void BasicMidi2CV::load_settings() {
 	set_pitch_channel(cv_channel_);
 
 	uint8_t pot_c_value = pots_.get(POT_MODE);
-	mode_ = MidiToCV::Mode((3 * pot_c_value) / 256);
+	mode_ = MidiToCV::Mode((4 * pot_c_value) / 256);
 	set_mode(mode_);
 }
