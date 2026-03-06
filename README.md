@@ -11,7 +11,7 @@ Flash the `brain-basic-midi2cv.uf2` file to your Brain module by holding the BOO
 - **MIDI to CV/Gate conversion**: Converts MIDI note-on/note-off messages to 1V/octave pitch CV and gate signals
 - **Configurable MIDI channel**: Listen to any MIDI channel (1-16) with visual feedback via LEDs
 - **Dual CV outputs**: Route pitch and gate to either output channel of the Brain module
-- **CC to CV mapping**: Secondary CV output can provide velocity, modwheel, or unison pitch (0-5V)
+- **CC to CV mapping**: Secondary CV output can provide velocity, modwheel, unison pitch, or duophonic split
 - **Panic function**: Clear stuck notes by holding both buttons for 2 seconds
 - **Interactive configuration**: Use buttons and potentiometers to change settings on the fly
 - **Visual feedback**: 6-LED display shows current MIDI channel or selected CV output during configuration
@@ -22,7 +22,7 @@ Once flashed, the module will:
 - Listen for MIDI notes on the configured MIDI channel (default: channel 1)
 - Output pitch CV (1V/octave) and gate signals on the configured CV channel (default: Channel A)
 - Convert MIDI note-on messages to gate high and MIDI note-off to gate low
-- Output the configured CC-to-CV signal on the secondary CV channel (velocity, modwheel, or unison pitch)
+- Output the configured CC-to-CV signal on the secondary CV channel (velocity, modwheel, unison pitch, or duophonic split)
 
 ### Cheat Sheet
 
@@ -57,6 +57,7 @@ Once flashed, the module will:
    - **Velocity**: Outputs 0-5V based on note velocity
    - **Modwheel**: Outputs 0-5V based on MIDI CC1 (modulation wheel)
    - **Unison**: Outputs the same pitch CV as the primary channel
+   - **Duophonic**: Splits the two most recent notes across the two CV channels
 3. **Release Button Z** to save the setting
 
 ### Panic Function
@@ -70,7 +71,11 @@ If MIDI notes get stuck (e.g., if the MIDI cable is disconnected during a note):
 
 - **During MIDI channel selection**: LEDs show channel number in binary (1-16)
 - **During CV channel selection**: Left 3 LEDs for Channel A, right 3 LEDs for Channel B
-- **During CC-to-CV mode selection**: LEDs indicate the selected mode
+- **During CC-to-CV mode selection**:
+  - LED 4 on: **Velocity**
+  - LED 5 on: **Modwheel**
+  - LED 4+5 on: **Unison**
+  - LED 6 on: **Duophonic**
 - **During normal operation**: LEDs turn off to conserve power
 
 ## Build
