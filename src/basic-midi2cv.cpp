@@ -53,6 +53,7 @@ BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi
 	// Load settings
 	mode_ = MidiToCV::Mode::kDefault;
 	load_settings();
+	init_pot_functions();
 }
 
 void BasicMidi2CV::button_a_on_press() {
@@ -69,6 +70,7 @@ void BasicMidi2CV::button_a_on_press() {
 void BasicMidi2CV::button_a_on_release() {
 	if (state_ == State::kSetMidiChannel) {
 		set_midi_channel(midi_channel_);
+		reset_pot_function_context();
 	}
 	if (state_ == State::kPanicStarted) {
 		reset_panic();
@@ -90,6 +92,7 @@ void BasicMidi2CV::button_b_on_release() {
 	if (state_ == State::kSetCVChannel) {
 		set_pitch_channel(cv_channel_);
 		MidiToCV::set_mode(mode_);
+		reset_pot_function_context();
 	}
 	if (state_ == State::kPanicStarted) {
 		reset_panic();
@@ -105,7 +108,9 @@ void BasicMidi2CV::update() {
 		// Read pot X and set MIDI channel accordingly
 		case State::kSetMidiChannel: {
 			if (is_note_playing()) break;
+			set_active_pot_functions(POT_FUNCTION_ID_MIDI_CHANNEL, POT_FUNCTION_ID_NONE, POT_FUNCTION_ID_NONE);
 			update_midi_channel_setting();
+			pot_multi_function_.clear_changed_flags();
 			leds_.set_from_mask(midi_channel_);
 			reset_leds_ = true;
 			break;
@@ -114,6 +119,7 @@ void BasicMidi2CV::update() {
 		// Read CV settings
 		case State::kSetCVChannel: {
 			if (is_note_playing()) break;
+			set_active_pot_functions(POT_FUNCTION_ID_NONE, POT_FUNCTION_ID_CV_CHANNEL, POT_FUNCTION_ID_MODE);
 
 			update_cv_channel_setting();
 			uint8_t cv_led_mask = 0b000000;
@@ -124,6 +130,7 @@ void BasicMidi2CV::update() {
 			}
 
 			update_cc_setting();
+			pot_multi_function_.clear_changed_flags();
 			uint8_t cc_led_mask = 0b000000;
 			switch (mode_) {
 				case 0:
@@ -196,11 +203,58 @@ uint8_t BasicMidi2CV::get_midi_channel() const {
 
 void BasicMidi2CV::reset_panic() {
 	panic_timer_start_ = 0;
+	reset_pot_function_context();
 	leds_.off_all();
 }
 
+void BasicMidi2CV::init_pot_functions() {
+	pot_multi_function_.init();
+
+	brain::ui::PotFunctionConfig midi_channel_cfg;
+	midi_channel_cfg.function_id = POT_FUNCTION_ID_MIDI_CHANNEL;
+	midi_channel_cfg.pot_index = POT_MIDI_CHANNEL;
+	midi_channel_cfg.min_value = 0;
+	midi_channel_cfg.max_value = 255;
+	midi_channel_cfg.initial_value = pots_.get(POT_MIDI_CHANNEL);
+	midi_channel_cfg.mode = PotMode::kValueScale;
+	midi_channel_cfg.pickup_hysteresis = POT_FUNCTION_PICKUP_HYSTERESIS;
+	pot_multi_function_.register_function(midi_channel_cfg);
+
+	brain::ui::PotFunctionConfig cv_channel_cfg;
+	cv_channel_cfg.function_id = POT_FUNCTION_ID_CV_CHANNEL;
+	cv_channel_cfg.pot_index = POT_CV_CHANNEL;
+	cv_channel_cfg.min_value = 0;
+	cv_channel_cfg.max_value = 255;
+	cv_channel_cfg.initial_value = pots_.get(POT_CV_CHANNEL);
+	cv_channel_cfg.mode = PotMode::kValueScale;
+	cv_channel_cfg.pickup_hysteresis = POT_FUNCTION_PICKUP_HYSTERESIS;
+	pot_multi_function_.register_function(cv_channel_cfg);
+
+	brain::ui::PotFunctionConfig mode_cfg;
+	mode_cfg.function_id = POT_FUNCTION_ID_MODE;
+	mode_cfg.pot_index = POT_MODE;
+	mode_cfg.min_value = 0;
+	mode_cfg.max_value = 255;
+	mode_cfg.initial_value = pots_.get(POT_MODE);
+	mode_cfg.mode = PotMode::kValueScale;
+	mode_cfg.pickup_hysteresis = POT_FUNCTION_PICKUP_HYSTERESIS;
+	pot_multi_function_.register_function(mode_cfg);
+}
+
+void BasicMidi2CV::set_active_pot_functions(uint8_t pot_0_function, uint8_t pot_1_function, uint8_t pot_2_function) {
+	const uint8_t functions[NUM_POTS] = {pot_0_function, pot_1_function, pot_2_function};
+	pot_multi_function_.set_active_functions(functions, NUM_POTS);
+	pot_multi_function_.update(pots_);
+}
+
+void BasicMidi2CV::reset_pot_function_context() {
+	set_active_pot_functions(POT_FUNCTION_ID_NONE, POT_FUNCTION_ID_NONE, POT_FUNCTION_ID_NONE);
+	pot_multi_function_.clear_changed_flags();
+}
+
 void BasicMidi2CV::update_midi_channel_setting() {
-	uint8_t pot_a_value = pots_.get(POT_MIDI_CHANNEL);
+	if (!pot_multi_function_.get_changed(POT_FUNCTION_ID_MIDI_CHANNEL)) return;
+	uint8_t pot_a_value = pot_multi_function_.get_value(POT_FUNCTION_ID_MIDI_CHANNEL);
 
 	// Divide into 16 bins (0-15) for stable MIDI channel selection
 	uint8_t binned_value = pot_a_value / 16;
@@ -208,7 +262,8 @@ void BasicMidi2CV::update_midi_channel_setting() {
 }
 
 void BasicMidi2CV::update_cv_channel_setting() {
-	uint8_t pot_b_value = pots_.get(POT_CV_CHANNEL);
+	if (!pot_multi_function_.get_changed(POT_FUNCTION_ID_CV_CHANNEL)) return;
+	uint8_t pot_b_value = pot_multi_function_.get_value(POT_FUNCTION_ID_CV_CHANNEL);
 
 	if (pot_b_value < POT_CV_CHANNEL_THRESHOLD) {
 		cv_channel_ = brain::io::AudioCvOutChannel::kChannelA;
@@ -218,18 +273,26 @@ void BasicMidi2CV::update_cv_channel_setting() {
 }
 
 void BasicMidi2CV::update_cc_setting() {
-	uint8_t pot_c_value = pots_.get(POT_MODE);
-	mode_ = MidiToCV::Mode(floor(3 * pot_c_value / 256));
-	printf("Mode: %d\n", mode_);
+	if (!pot_multi_function_.get_changed(POT_FUNCTION_ID_MODE)) return;
+	uint8_t pot_c_value = pot_multi_function_.get_value(POT_FUNCTION_ID_MODE);
+	mode_ = MidiToCV::Mode((3 * pot_c_value) / 256);
 }
 
 void BasicMidi2CV::load_settings() {
-	update_midi_channel_setting();
+	uint8_t pot_a_value = pots_.get(POT_MIDI_CHANNEL);
+	uint8_t binned_value = pot_a_value / 16;
+	midi_channel_ = binned_value + 1;
 	set_midi_channel(midi_channel_);
 
-	update_cv_channel_setting();
+	uint8_t pot_b_value = pots_.get(POT_CV_CHANNEL);
+	if (pot_b_value < POT_CV_CHANNEL_THRESHOLD) {
+		cv_channel_ = brain::io::AudioCvOutChannel::kChannelA;
+	} else {
+		cv_channel_ = brain::io::AudioCvOutChannel::kChannelB;
+	}
 	set_pitch_channel(cv_channel_);
 
-	update_cc_setting();
+	uint8_t pot_c_value = pots_.get(POT_MODE);
+	mode_ = MidiToCV::Mode((3 * pot_c_value) / 256);
 	set_mode(mode_);
 }
