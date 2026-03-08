@@ -3,7 +3,8 @@
 BasicMidi2CV::BasicMidi2CV(brain::io::AudioCvOutChannel cv_channel, uint8_t midi_channel) :
 	button_a_(GPIO_BRAIN_BUTTON_1),
 	button_b_(GPIO_BRAIN_BUTTON_2),
-	pots_()
+	pots_(),
+	leds_(true)
 {
 	init(cv_channel, midi_channel);
 	set_max_cc_voltage(5);
