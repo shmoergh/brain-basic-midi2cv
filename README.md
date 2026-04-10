@@ -1,3 +1,5 @@
+# ⚠️ DEPRECATED — This firmware is deprecated in favor of [Le Controlleur](https://www.shmoergh.com/guides/le-controlleur/), which has the full implementation of this MIDI to CV controller.
+
 # Basic MIDI to CV
 
 A versatile MIDI to CV converter firmware for the Shmøergh Moduleur Brain module. Converts incoming MIDI note messages to 1V/octave CV pitch and gate signals, with configurable MIDI channel and CV output routing.
